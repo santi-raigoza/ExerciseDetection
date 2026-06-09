@@ -25,8 +25,8 @@ ENV/
 *.h5
 *.npy
 *.npz
-data/raw/
-data/processed/
+data/raw/*.csv
+models/*.pkl
 
 # OS
 .DS_Store
