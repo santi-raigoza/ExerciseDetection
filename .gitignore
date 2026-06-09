@@ -32,6 +32,9 @@ models/*.pkl
 .DS_Store
 Thumbs.db
 
+# Local session docs (not committed)
+HANDOFF.md
+
 # IDE
 .vscode/
 .idea/
