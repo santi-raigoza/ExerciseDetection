@@ -34,6 +34,11 @@ Thumbs.db
 
 # Local session docs (not committed)
 HANDOFF.md
+docs/superpowers/
+
+# Downloaded videos and MediaPipe model
+data/videos/
+pose_landmarker_lite.task
 
 # IDE
 .vscode/
