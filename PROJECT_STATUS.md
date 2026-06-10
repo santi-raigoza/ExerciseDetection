@@ -78,7 +78,7 @@ ExerciseDetection/
 
 ## Current Work
 
-**Task 4: collect.py** — webcam data collection script
+**Task 4: collect.py** — webcam data collection script. Ready to begin — all Task 3 exercises verified.
 
 ## Rep Counter State Machine (src/utils/rep_counter.py)
 
@@ -86,11 +86,12 @@ ExerciseDetection/
 |---|---|---|---|---|
 | Pushup | Side profile | Elbow angle (more visible side) | < 110° | > 130° |
 | Squat | Side profile | Knee angle (more visible side) | < 90° | > 160° |
-| Pullup | Side profile | Elbow angle (more visible side) | < 90° | > 160° |
+| Pullup | Front-facing | shoulder_y − wrist_y | < 0.08 (hanging) | > 0.15 (pulled up) |
 | Jumping jack | Facing forward | min(wrist spread, ankle spread) / shoulder width | < 0.7 | > 1.3 |
 
 **Key design decisions:**
 - Uses the more visible side's joint (MediaPipe visibility score) instead of averaging — critical for side-profile exercises where one side is partially occluded
+- Pullup uses shoulder-rise (`avg_shoulder_y − avg_wrist_y`) instead of elbow angle — works front-facing, no clean side profile needed. Rise *increases* when pulled up (MediaPipe wrist landmark drops when elbows bend). Thresholds calibrated empirically.
 - Jumping jack metric is normalized by shoulder width (scale-invariant regardless of camera distance)
 - Jumping jack requires BOTH wrist AND ankle spread to open (min of both ratios) — prevents arm-only motion from counting
 
@@ -106,7 +107,7 @@ ExerciseDetection/
 | Squat | ✅ Working — side profile, tracks correctly |
 | Pushup | ✅ Working — side profile, natural range of motion |
 | Jumping jack | ✅ Working — facing forward, requires both arms and legs |
-| Pullup | ⏳ Not yet verified — user needs pull-up bar to test |
+| Pullup | ✅ Verified — front-facing camera, shoulder-rise metric, 8 reps confirmed |
 
 ## Dataset Status
 
@@ -126,13 +127,12 @@ No model trained yet. Requires dataset first.
 
 ## Next Steps
 
-1. Task 4: `collect.py` — data collection script
+1. **Task 4: `collect.py`** — data collection script (ready to begin)
 2. Task 5: `train.py` — training pipeline
 3. Task 6: `app.py` — real-time inference
-4. Verify pullup rep counting with a real pull-up bar (use `test_rep_counter_live.py`, press 3, side profile)
-5. Collect training data (manual, ~15–20 min per exercise class)
-6. Train model and evaluate accuracy
-7. Run live app and verify rep counting
+4. Collect training data (manual, ~15–20 min per exercise class)
+5. Train model and evaluate accuracy
+6. Run live app and verify rep counting
 
 ## Future Enhancements
 

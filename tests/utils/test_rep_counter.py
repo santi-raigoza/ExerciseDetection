@@ -41,6 +41,17 @@ BENT_LEG = {
     25: (0, 0.6, 0), 26: (0, 0.6, 0),
     27: (0.1, 0.55, 0), 28: (0.1, 0.55, 0),
 }
+# Pullup: shoulder-rise metric = avg_shoulder_y - avg_wrist_y (front-facing camera)
+# Hanging: arms extended overhead, wrists and shoulders at similar Y → rise ≈ 0
+PULLUP_HANGING = {
+    11: (0.5, 0.08, 0), 12: (0.5, 0.08, 0),  # shoulders y=0.08
+    15: (0.5, 0.05, 0), 16: (0.5, 0.05, 0),  # wrists y=0.05  → rise=0.03 < 0.08
+}
+# Pulled up: elbows bend, wrist landmarks drop in frame → rise increases
+PULLUP_UP = {
+    11: (0.5, 0.30, 0), 12: (0.5, 0.30, 0),  # shoulders y=0.30
+    15: (0.5, 0.08, 0), 16: (0.5, 0.08, 0),  # wrists y=0.08  → rise=0.22 > 0.15
+}
 # Jumping jack: combined wrist+ankle spread normalized by shoulder width
 # shoulder_width = 0.2, so ratio = spread / 0.2
 JACKS_CLOSED = {
@@ -111,9 +122,9 @@ def test_jumping_jack_counts_one_rep():
 
 def test_pullup_counts_one_rep():
     rc = RepCounter()
-    send(rc, 'pullup', make_33(BENT_ARM))
+    send(rc, 'pullup', make_33(PULLUP_UP))      # pull up → state='up'
     assert rc.count == 0
-    send(rc, 'pullup', make_33(STRAIGHT_ARM))
+    send(rc, 'pullup', make_33(PULLUP_HANGING))  # lower back → state='down', count
     assert rc.count == 1
 
 

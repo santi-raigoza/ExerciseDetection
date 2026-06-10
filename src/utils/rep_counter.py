@@ -38,12 +38,16 @@ class RepCounter:
         coords = np.array([[lm.x, lm.y, lm.z] for lm in landmarks], dtype=np.float32)
         vis = np.array([getattr(lm, 'visibility', 0.5) for lm in landmarks], dtype=np.float32)
 
-        if exercise in ('pushup', 'pullup'):
+        if exercise == 'pushup':
             left = _angle(coords[LEFT_SHOULDER], coords[LEFT_ELBOW], coords[LEFT_WRIST])
             right = _angle(coords[RIGHT_SHOULDER], coords[RIGHT_ELBOW], coords[RIGHT_WRIST])
             left_vis = (vis[LEFT_SHOULDER] + vis[LEFT_ELBOW] + vis[LEFT_WRIST]) / 3
             right_vis = (vis[RIGHT_SHOULDER] + vis[RIGHT_ELBOW] + vis[RIGHT_WRIST]) / 3
             return left if left_vis >= right_vis else right
+        if exercise == 'pullup':
+            avg_shoulder_y = (coords[LEFT_SHOULDER][1] + coords[RIGHT_SHOULDER][1]) / 2
+            avg_wrist_y = (coords[LEFT_WRIST][1] + coords[RIGHT_WRIST][1]) / 2
+            return avg_shoulder_y - avg_wrist_y
         if exercise == 'squat':
             left = _angle(coords[LEFT_HIP], coords[LEFT_KNEE], coords[LEFT_ANKLE])
             right = _angle(coords[RIGHT_HIP], coords[RIGHT_KNEE], coords[RIGHT_ANKLE])
@@ -91,9 +95,9 @@ class RepCounter:
                 self._count += 1
 
         elif exercise == 'pullup':
-            if self._state == 'down' and smoothed < 90:
+            if self._state == 'down' and smoothed > 0.15:
                 self._state = 'up'
-            elif self._state == 'up' and smoothed > 160:
+            elif self._state == 'up' and smoothed < 0.08:
                 self._state = 'down'
                 self._count += 1
 
