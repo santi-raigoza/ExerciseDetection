@@ -45,17 +45,19 @@ ExerciseDetection/
 ├── src/
 │   ├── utils/
 │   │   ├── landmarks.py      # normalize(), build_window(), POSE_CONNECTIONS
-│   │   └── rep_counter.py    # RepCounter state machine (pending)
+│   │   └── rep_counter.py    # RepCounter state machine ✅
 │   ├── collect.py            # Data collection script (pending)
 │   ├── train.py              # Training pipeline (pending)
 │   └── app.py                # Real-time inference (pending)
 ├── tests/
 │   ├── utils/
 │   │   ├── test_landmarks.py # 6 passing tests
-│   │   └── test_rep_counter.py (pending)
+│   │   └── test_rep_counter.py # 8 passing tests
 │   ├── test_collect.py       # (pending)
 │   └── test_train.py         # (pending)
 ├── conftest.py               # Adds src/ to sys.path for tests
+├── test.py                   # Visual test for landmarks.py (webcam, skeleton overlay)
+├── test_rep_counter_live.py  # Live rep counter test (webcam, no model needed)
 ├── pose_landmarker_lite.task # MediaPipe model file
 ├── requirements.txt
 ├── PROJECT_STATUS.md
@@ -71,10 +73,40 @@ ExerciseDetection/
 | Implementation plan | 6-task TDD plan | 026e32d |
 | Task 1: Scaffold | Directory structure, conftest.py, pytest | 87da256 |
 | Task 2: landmarks.py | normalize(), build_window(), POSE_CONNECTIONS, 6 tests | defbd38 |
+| Task 3: rep_counter.py | RepCounter state machine, 8 tests | c450c24 |
+| Task 3 tuning | Visibility-weighted side selection, threshold tuning, jumping jack fix | 5ae8cdd |
 
 ## Current Work
 
-**Task 3: rep_counter.py** — per-exercise state machine (pushup, squat, pullup, jumping jack + rest handling)
+**Task 4: collect.py** — webcam data collection script
+
+## Rep Counter State Machine (src/utils/rep_counter.py)
+
+| Exercise | Camera orientation | Metric | Down threshold | Up threshold |
+|---|---|---|---|---|
+| Pushup | Side profile | Elbow angle (more visible side) | < 110° | > 130° |
+| Squat | Side profile | Knee angle (more visible side) | < 90° | > 160° |
+| Pullup | Side profile | Elbow angle (more visible side) | < 90° | > 160° |
+| Jumping jack | Facing forward | min(wrist spread, ankle spread) / shoulder width | < 0.7 | > 1.3 |
+
+**Key design decisions:**
+- Uses the more visible side's joint (MediaPipe visibility score) instead of averaging — critical for side-profile exercises where one side is partially occluded
+- Jumping jack metric is normalized by shoulder width (scale-invariant regardless of camera distance)
+- Jumping jack requires BOTH wrist AND ankle spread to open (min of both ratios) — prevents arm-only motion from counting
+
+## Live Test Scripts
+
+- **`test.py`** — opens webcam, draws skeleton overlay, shows normalized hip/shoulder values to verify landmarks.py
+- **`test_rep_counter_live.py`** — opens webcam, press 1-4 to select exercise, shows live joint angles, visibility scores, state, and rep count. No trained model needed.
+
+## Verified Behavior (live tested)
+
+| Exercise | Status |
+|---|---|
+| Squat | ✅ Working — side profile, tracks correctly |
+| Pushup | ✅ Working — side profile, natural range of motion |
+| Jumping jack | ✅ Working — facing forward, requires both arms and legs |
+| Pullup | ⏳ Not yet verified — user needs pull-up bar to test |
 
 ## Dataset Status
 
@@ -89,15 +121,15 @@ No model trained yet. Requires dataset first.
 
 ## Known Issues
 
-- cSpell IDE warnings on package names (numpy, linalg, etc.) — cosmetic only, not real errors
+- cSpell IDE warnings on package names (numpy, linalg, pullup, etc.) — cosmetic only, not real errors
 - basedpyright warns "utils.landmarks could not be resolved" in test files — resolved at runtime via conftest.py sys.path injection; not a real error
 
 ## Next Steps
 
-1. Task 3: `rep_counter.py` — state machine
-2. Task 4: `collect.py` — data collection
-3. Task 5: `train.py` — training pipeline
-4. Task 6: `app.py` — real-time inference
+1. Task 4: `collect.py` — data collection script
+2. Task 5: `train.py` — training pipeline
+3. Task 6: `app.py` — real-time inference
+4. Verify pullup rep counting with a real pull-up bar (use `test_rep_counter_live.py`, press 3, side profile)
 5. Collect training data (manual, ~15–20 min per exercise class)
 6. Train model and evaluate accuracy
 7. Run live app and verify rep counting
