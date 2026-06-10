@@ -41,9 +41,18 @@ BENT_LEG = {
     25: (0, 0.6, 0), 26: (0, 0.6, 0),
     27: (0.1, 0.55, 0), 28: (0.1, 0.55, 0),
 }
-# Jumping jack: wrist spread — closed=wrists near hip x, open=wrists far apart
-JACKS_CLOSED = {15: (0.45, 0.7, 0), 16: (0.55, 0.7, 0)}  # spread = 0.10 < 0.4
-JACKS_OPEN   = {15: (0.1, 0.3, 0),  16: (0.9, 0.3, 0)}   # spread = 0.80 > 0.6
+# Jumping jack: combined wrist+ankle spread normalized by shoulder width
+# shoulder_width = 0.2, so ratio = spread / 0.2
+JACKS_CLOSED = {
+    11: (0.4, 0.3, 0), 12: (0.6, 0.3, 0),   # shoulders (width=0.2)
+    15: (0.45, 0.7, 0), 16: (0.55, 0.7, 0),  # wrists close  → ratio=0.5
+    27: (0.47, 0.9, 0), 28: (0.53, 0.9, 0),  # ankles close  → ratio=0.3  min=0.3 < 0.7
+}
+JACKS_OPEN = {
+    11: (0.4, 0.3, 0), 12: (0.6, 0.3, 0),   # shoulders (width=0.2)
+    15: (0.1, 0.3, 0),  16: (0.9, 0.3, 0),  # wrists spread → ratio=4.0
+    27: (0.2, 0.9, 0),  28: (0.8, 0.9, 0),  # ankles spread → ratio=3.0  min=3.0 > 1.3
+}
 
 
 def send(rc, exercise, lms, n=5, confidence=0.9):

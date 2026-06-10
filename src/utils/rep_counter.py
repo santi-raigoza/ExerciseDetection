@@ -34,17 +34,27 @@ class RepCounter:
         self._state = None
         self._history = deque(maxlen=SMOOTH_N)
 
-    def _metric(self, exercise, coords):
+    def _metric(self, exercise, landmarks):
+        coords = np.array([[lm.x, lm.y, lm.z] for lm in landmarks], dtype=np.float32)
+        vis = np.array([getattr(lm, 'visibility', 0.5) for lm in landmarks], dtype=np.float32)
+
         if exercise in ('pushup', 'pullup'):
             left = _angle(coords[LEFT_SHOULDER], coords[LEFT_ELBOW], coords[LEFT_WRIST])
             right = _angle(coords[RIGHT_SHOULDER], coords[RIGHT_ELBOW], coords[RIGHT_WRIST])
-            return (left + right) / 2.0
+            left_vis = (vis[LEFT_SHOULDER] + vis[LEFT_ELBOW] + vis[LEFT_WRIST]) / 3
+            right_vis = (vis[RIGHT_SHOULDER] + vis[RIGHT_ELBOW] + vis[RIGHT_WRIST]) / 3
+            return left if left_vis >= right_vis else right
         if exercise == 'squat':
             left = _angle(coords[LEFT_HIP], coords[LEFT_KNEE], coords[LEFT_ANKLE])
             right = _angle(coords[RIGHT_HIP], coords[RIGHT_KNEE], coords[RIGHT_ANKLE])
-            return (left + right) / 2.0
+            left_vis = (vis[LEFT_HIP] + vis[LEFT_KNEE] + vis[LEFT_ANKLE]) / 3
+            right_vis = (vis[RIGHT_HIP] + vis[RIGHT_KNEE] + vis[RIGHT_ANKLE]) / 3
+            return left if left_vis >= right_vis else right
         if exercise == 'jumping_jack':
-            return abs(coords[LEFT_WRIST][0] - coords[RIGHT_WRIST][0])
+            shoulder_width = abs(coords[LEFT_SHOULDER][0] - coords[RIGHT_SHOULDER][0]) + 1e-6
+            wrist_spread = abs(coords[LEFT_WRIST][0] - coords[RIGHT_WRIST][0]) / shoulder_width
+            ankle_spread = abs(coords[LEFT_ANKLE][0] - coords[RIGHT_ANKLE][0]) / shoulder_width
+            return min(wrist_spread, ankle_spread)
         return 0.0
 
     def update(self, exercise, confidence, landmarks):
@@ -63,11 +73,17 @@ class RepCounter:
             self._state = 'up' if exercise in ('pushup', 'squat') else 'down'
             self._history.clear()
 
-        coords = np.array([[lm.x, lm.y, lm.z] for lm in landmarks], dtype=np.float32)
-        self._history.append(self._metric(exercise, coords))
+        self._history.append(self._metric(exercise, landmarks))
         smoothed = float(np.mean(self._history))
 
-        if exercise in ('pushup', 'squat'):
+        if exercise == 'pushup':
+            if self._state == 'up' and smoothed < 110:
+                self._state = 'down'
+            elif self._state == 'down' and smoothed > 130:
+                self._state = 'up'
+                self._count += 1
+
+        elif exercise == 'squat':
             if self._state == 'up' and smoothed < 90:
                 self._state = 'down'
             elif self._state == 'down' and smoothed > 160:
@@ -82,11 +98,11 @@ class RepCounter:
                 self._count += 1
 
         elif exercise == 'jumping_jack':
-            if self._state == 'up' and smoothed < 0.4:
+            if self._state == 'down' and smoothed > 1.3:
+                self._state = 'up'
+            elif self._state == 'up' and smoothed < 0.7:
                 self._state = 'down'
                 self._count += 1
-            elif self._state == 'down' and smoothed > 0.6:
-                self._state = 'up'
 
         return self._count
 
