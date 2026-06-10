@@ -6,7 +6,6 @@ from pathlib import Path
 
 import cv2
 import mediapipe as mp
-import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python.vision import PoseLandmarker, PoseLandmarkerOptions, RunningMode
 
@@ -14,7 +13,7 @@ from utils.landmarks import normalize, build_window, POSE_CONNECTIONS
 
 WINDOW_SIZE = 30
 STRIDE = 5
-TASK_PATH = 'pose_landmarker_lite.task'
+TASK_PATH = str(Path(__file__).parent.parent / 'pose_landmarker_lite.task')
 EXERCISES = ['pushup', 'pullup', 'squat', 'jumping_jack', 'rest']
 
 
@@ -46,9 +45,13 @@ def main():
     parser = argparse.ArgumentParser(description='Collect exercise training data')
     parser.add_argument('--exercise', required=True, choices=EXERCISES)
     parser.add_argument('--samples', type=int, default=300)
-    parser.add_argument('--output-dir', default='data/raw')
+    parser.add_argument('--output-dir', default=str(Path(__file__).parent.parent / 'data' / 'raw'))
     parser.add_argument('--video', default=None,
                         help='Path to a video file. Omit to use the webcam.')
+    parser.add_argument('--start', type=float, default=0.0,
+                        help='Skip to this timestamp (seconds) before recording. Video only.')
+    parser.add_argument('--end', type=float, default=None,
+                        help='Stop recording at this timestamp (seconds). Video only.')
     args = parser.parse_args()
 
     options = PoseLandmarkerOptions(
@@ -63,6 +66,9 @@ def main():
         print(f"ERROR: could not open {'video file: ' + args.video if args.video else 'webcam'}.")
         return
 
+    if args.video and args.start > 0:
+        cap.set(cv2.CAP_PROP_POS_MSEC, args.start * 1000)
+
     frame_buffer = deque(maxlen=WINDOW_SIZE)
     windows = []
     # Video files collect automatically; webcam requires SPACE to start/stop.
@@ -71,7 +77,9 @@ def main():
 
     print(f"Exercise: {args.exercise} | Target: {args.samples} windows")
     if args.video:
-        print(f"Source: {args.video}  (auto-recording)")
+        start_msg = f" (starting at {args.start}s)" if args.start > 0 else ""
+        end_msg = f" (stopping at {args.end}s)" if args.end is not None else ""
+        print(f"Source: {args.video}{start_msg}{end_msg}  (auto-recording)")
     else:
         print("SPACE = start/stop recording    Q = quit and save")
 
@@ -83,6 +91,12 @@ def main():
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
         result = landmarker.detect(mp_image)
+
+        if args.video and args.end is not None:
+            pos_sec = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+            if pos_sec >= args.end:
+                print(f"Reached end timestamp ({args.end}s). Stopping.")
+                break
 
         if result.pose_landmarks:
             landmarks = result.pose_landmarks[0]
