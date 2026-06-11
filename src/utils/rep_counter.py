@@ -88,9 +88,9 @@ class RepCounter:
                 self._count += 1
 
         elif exercise == 'squat':
-            if self._state == 'up' and smoothed < 90:
+            if self._state == 'up' and smoothed < 110:
                 self._state = 'down'
-            elif self._state == 'down' and smoothed > 160:
+            elif self._state == 'down' and smoothed > 140:
                 self._state = 'up'
                 self._count += 1
 
