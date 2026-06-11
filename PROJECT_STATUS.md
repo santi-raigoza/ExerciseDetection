@@ -44,14 +44,14 @@ ExerciseDetection/
 │       ├── specs/            # Design documents
 │       └── plans/            # Implementation plans
 ├── models/                   # Trained .pkl files (gitignored)
-│   └── report.txt            # Latest training classification report ✅
+│   └── report.txt            # Latest training classification report
 ├── src/
 │   ├── utils/
-│   │   ├── landmarks.py      # normalize(), build_window(), POSE_CONNECTIONS ✅
-│   │   └── rep_counter.py    # RepCounter state machine ✅
-│   ├── collect.py            # Data collection script ✅
-│   ├── train.py              # Training pipeline ✅
-│   └── app.py                # Real-time inference app ✅
+│   │   ├── landmarks.py      # normalize(), build_window(), POSE_CONNECTIONS
+│   │   └── rep_counter.py    # RepCounter state machine
+│   ├── collect.py            # Data collection script
+│   ├── train.py              # Training pipeline
+│   └── app.py                # Real-time inference app
 ├── tests/
 │   ├── utils/
 │   │   ├── test_landmarks.py   # 6 passing tests
