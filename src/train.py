@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime
 from pathlib import Path
 
 import joblib
@@ -42,10 +43,19 @@ def train(data_dir, models_dir, **mlp_kwargs):
     model = MLPClassifier(**params)
     model.fit(X_train_s, y_train)
 
-    # Print per-class precision/recall and confusion matrix
+    # Print per-class precision/recall and confusion matrix, and save to report.txt
     y_pred = model.predict(X_test_s)
-    print(classification_report(y_test, y_pred))
-    print(confusion_matrix(y_test, y_pred, labels=model.classes_))
+    report = classification_report(y_test, y_pred)
+    matrix = str(confusion_matrix(y_test, y_pred, labels=model.classes_))
+    print(report)
+    print(matrix)
+
+    Path(models_dir).mkdir(parents=True, exist_ok=True)
+    report_path = Path(models_dir) / 'report.txt'
+    with open(report_path, 'w') as f:
+        f.write(f"Trained: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write(report + '\n')
+        f.write(matrix + '\n')
 
     # Save model + scaler — app.py loads both to classify live webcam frames
     Path(models_dir).mkdir(parents=True, exist_ok=True)
